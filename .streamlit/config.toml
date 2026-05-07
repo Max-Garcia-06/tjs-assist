@@ -1,0 +1,14 @@
+# Trader Joe's–inspired palette (unofficial). Edit to taste.
+[theme]
+base = "light"
+primaryColor = "#B81D2C"
+backgroundColor = "#FDF6ED"
+secondaryBackgroundColor = "#FFF8F2"
+textColor = "#2A1F1A"
+font = "sans serif"
+
+[client]
+toolbarMode = "minimal"
+
+[server]
+headless = true
