@@ -172,15 +172,23 @@ def build_recent_candidate_reference(products: list[dict], limit: int = 42) -> t
 
 
 def extract_json_blob(text: str) -> dict[str, Any]:
-    cleaned = text.strip()
+    """Parse the first JSON object in the model reply (handles ```json fences and trailing prose)."""
+    cleaned = text.strip().lstrip("\ufeff")
+    # Drop a single leading fenced-block opener (```, ```json, ```JSON, etc.)
     if cleaned.startswith("```"):
-        cleaned = re.sub(r"^```(?:json)?\s*", "", cleaned, flags=re.IGNORECASE)
-        cleaned = re.sub(r"\s*```$", "", cleaned).strip()
+        cleaned = re.sub(r"^```[\w\-]*\s*", "", cleaned, count=1, flags=re.IGNORECASE)
+    # Drop a trailing closing fence if it sits at the end of the blob
+    cleaned = re.sub(r"\s*```\s*\Z", "", cleaned)
 
-    brace_start = cleaned.find("{")
-    brace_end = cleaned.rfind("}")
-    json_slice = cleaned[brace_start : brace_end + 1]
-    return json.loads(json_slice)
+    start = cleaned.find("{")
+    if start == -1:
+        raise json.JSONDecodeError("No JSON object found", cleaned, 0)
+
+    decoder = json.JSONDecoder()
+    obj, _end = decoder.raw_decode(cleaned[start:])
+    if not isinstance(obj, dict):
+        raise TypeError("Root JSON must be an object")
+    return obj
 
 
 def validate_highlights(highlights: list[dict], allowed: list[str]) -> list[dict]:
